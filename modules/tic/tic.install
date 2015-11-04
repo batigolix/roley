@@ -1,0 +1,12 @@
+<?php
+
+/**
+ * @file
+ * This file contains the connect_country install functions
+ */
+
+function tic_update_7000() {
+
+  variable_set('admin_theme', 'shiny');
+
+}

@@ -16,3 +16,5 @@ projects[webform][subdir] = contrib
 projects[views][subdir] = contrib
 projects[ctools][subdir] = contrib
 projects[features][subdir] = contrib
+
+projects[shiny][type] = "theme"

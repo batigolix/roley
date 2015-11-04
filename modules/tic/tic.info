@@ -1,0 +1,9 @@
+name = this is custom
+description = custom stuffz
+core = 7.x
+dependencies[] = node
+dependencies[] = block
+package = Custom
+dependencies[] = features
+dependencies[] = text
+features[features_api][] = api:2
