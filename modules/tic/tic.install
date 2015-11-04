@@ -4,8 +4,13 @@
  * @file
  * This file contains the connect_country install functions
  */
+function tic_enable() {
 
-function tic_update_7000() {
+  variable_set('admin_theme', 'shiny');
+
+}
+
+function tic_update_7001() {
 
   variable_set('admin_theme', 'shiny');
 
