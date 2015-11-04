@@ -11,3 +11,8 @@ defaults[projects][subdir] = contrib
 
 ; Platform indicator module.
 projects[platform][version] = 1.3
+
+projects[webform][subdir] = contrib
+projects[views][subdir] = contrib
+projects[ctools][subdir] = contrib
+projects[features][subdir] = contrib
