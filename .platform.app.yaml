@@ -46,6 +46,7 @@ hooks:
     # We run deploy hook after your application has been deployed and started.
     deploy: |
       cd public
+      drush -y fr tic
       drush -y updatedb
 
 # The configuration of scheduled execution.
