@@ -15,3 +15,10 @@ function tic_update_7001() {
   variable_set('admin_theme', 'shiny');
 
 }
+
+function tic_update_7002() {
+
+watchdog('warning', 'hallo allemaal!!!');
+
+
+}

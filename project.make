@@ -14,7 +14,9 @@ projects[platform][version] = 1.3
 
 projects[webform][subdir] = contrib
 projects[views][subdir] = contrib
+projects[context][subdir] = contrib
 projects[ctools][subdir] = contrib
 projects[features][subdir] = contrib
+projects[leaflet][subdir] = contrib
 
 projects[shiny][type] = "theme"
