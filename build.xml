@@ -83,6 +83,15 @@
         </drush>
     </target>
 
+    <target name="make-mini-drupal" description="make mini drupal" depends="init">
+        <echo msg="make mini drupal"/>
+        <drush command="make" assume="yes" bin="${drush.bin}" pipe="yes" verbose="${drush.verbose}" root="${build.dir}">
+            <param>${mini.make}</param>
+            <param>${build.dir}</param>
+            <option name="no-patch-txt"></option>
+        </drush>
+    </target>
+
     <!-- Run drush make on multisite make file -->
     <target name="make-multisite" description="Run drush make on multisite make file" depends="init">
         <echo msg="Run drush make on multisite make file"/>
