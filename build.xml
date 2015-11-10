@@ -304,6 +304,15 @@
         </if>
     </target>
 
+    <!-- copy platform.sh settings files to right place -->
+    <target name="copy-platform-settings" depends="init" description="copy platform.sh settings files to right place">
+        <echo msg="copy platform.sh settings files to right place" />
+           <copy file="${platformsh.settings.dir}/settings.php" tofile="${drupal.settings.dir}/settings.php"/>
+                <copy file="${platformsh.settings.dir}/settings.local.php" tofile="${drupal.settings.dir}/settings.local.php"/>
+                <chmod file="${drupal.settings.dir}/settings.php" mode="0775" failonerror="true"/>
+    </target>
+
+
     <!-- Reviews the code using coder -->
     <target name="review-code" description="Reviews the code using coder">
         <foreach target="review-code-type" param="coder.review.type" list="comment,i18n,security,sql,style" />
