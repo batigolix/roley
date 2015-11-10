@@ -87,7 +87,7 @@
         <echo msg="make mini drupal"/>
         <drush command="make" assume="yes" bin="${drush.bin}" pipe="yes" verbose="${drush.verbose}" root="${build.dir}">
             <param>${mini.make}</param>
-            <param>${build.dir}</param>
+            <param>${temp.build.dir}</param>
             <option name="no-patch-txt"></option>
         </drush>
     </target>
