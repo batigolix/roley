@@ -7,6 +7,6 @@ ls
 
 ./bin/phing -verbose fetch-multisite
 ./bin/phing -verbose make-multisite
-#./bin/phing make-project
-#./bin/phing symlink-all
+#./bin/phing -verbose make-project
+./bin/phing -verbose symlink-all
 #./bin/phing install-drupal
