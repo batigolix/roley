@@ -18,5 +18,6 @@ projects[context][subdir] = contrib
 projects[ctools][subdir] = contrib
 projects[features][subdir] = contrib
 projects[leaflet][subdir] = contrib
+projects[admin_menu][subdir] = contrib
 
 projects[shiny][type] = "theme"
