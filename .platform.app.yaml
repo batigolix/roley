@@ -9,12 +9,12 @@ type: "php:5.6"
 
 # Configuration of the build of the application.
 build:
-    flavor: drupal
+    flavor: composer
 
 # The build-time dependencies of the app.
 dependencies:
     php:
-        "drush/drush": "7.1.0"
+#        "drush/drush": "7.1.0"
 
 # The relationships of the application with services or other applications.
 # The left-hand side is the name of the relationship as it will be exposed
@@ -44,6 +44,8 @@ mounts:
 # The hooks executed at various points in the lifecycle of the application.
 hooks:
     # We run deploy hook after your application has been deployed and started.
+    build: |
+      ./build-platform.sh
     deploy: |
       cd public
       drush -y fr tic

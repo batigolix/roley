@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<project name="dae" default="help">
+
+
+    <!-- Use local properties if they exist -->
+    <if>
+        <available file="build.properties.local"/>
+        <then>
+            <property file="build.properties.local"/>
+        </then>
+    </if>
+    <property file="build.properties"/>
+
+    <!-- Include additional build script properties if they exist. -->
+    <if>
+        <available file="${additional.build.script.dir}"/>
+        <then>
+            <property file="${additional.build.script.dir}/build.properties"/>
+        </then>
+    </if>
+
+    <!-- Include additional build script if this exists. -->
+    <if>
+        <available file="${additional.build.script.dir}"/>
+        <then>
+            <import file="${additional.build.script.dir}/build.xml" />
+        </then>
+    </if>
+
+    <!-- Set phing drush task -->
+    <target name="init" description="Set phing drush task">
+        <!--       <taskdef name="drush" classname="Drush\Task" />
+        todo figure out why this does not work -->
+        <!-- Register as custom Phing task -->
+        <taskdef name="drush" classname="DrushTask" classpath="vendor/drupal/phing-drush-task"/>
+        <!-- Create the logs dir -->
+        <if>
+            <not><available file="${project.log.dir}" type="dir"/></not>
+            <then><mkdir dir="${project.log.dir}"/></then>
+        </if>
+        <!-- Create the tools dir -->
+        <!-- @todo review if used and  if not delete -->
+        <if>
+            <not><available file="${project.tools.dir}" type="dir"/></not>
+            <then><mkdir dir="${project.tools.dir}"/></then>
+        </if>
+    </target>
+
+    <!-- Display targets with short description -->
+    <target name="help" description="Phing target list">
+        <exec executable="${phing.bin}" passthru="true">
+            <arg value="-l"/>
+        </exec>
+    </target>
+
+    <!-- Export and place the multisite code -->
+    <target name="fetch-multisite" description="Export and place the multisite code">
+        <echo msg="Export and place the multisite code" />
+        <!-- Only clone if repository does not exist already -->
+        <if>
+            <not><available file="${multisite.dir}" /></not>
+            <then>
+                <!-- Set revision to HEAD if not already defined -->
+                <property name="repo.revision" value="HEAD" override="false"/>
+
+                <echo>Cloning ${multisite.repo} ${multisite.branch} into ${multisite.dir}</echo>
+                <!-- The [`gitclone` task](http://www.phing.info/docs/guide/stable/chapters/appendixes/AppendixC-OptionalTasks.html#GitCloneTask)
+                     does not seem to work. Use exec instead. -->
+                <exec command="git clone ${multisite.repo} ${multisite.dir}" />
+                <exec command="git checkout ${multisite.branch}" dir="${multisite.dir}"/>
+            </then>
+        </if>
+    </target>
+
+    <!-- Run drush make on drupal core make file -->
+    <target name="make-drupal-core" description="Run drush make on drupal core make file" depends="init">
+        <echo msg="Run drush make on drupal core make file"/>
+        <drush command="make" assume="yes" bin="${drush.bin}" pipe="yes" verbose="${drush.verbose}" root="${build.dir}">
+            <param>${drupal.core.make}</param>
+            <param>${build.dir}</param>
+            <option name="no-patch-txt"></option>
+        </drush>
+    </target>
+
+    <!-- Run drush make on multisite make file -->
+    <target name="make-multisite" description="Run drush make on multisite make file" depends="init">
+        <echo msg="Run drush make on multisite make file"/>
+        <drush command="make" assume="yes" bin="${drush.bin}" pipe="yes" verbose="${drush.verbose}" root="${build.dir}">
+            <param>${multisite.make}</param>
+            <param>${build.dir}</param>
+            <option name="concurrency">10</option>
+            <option name="no-patch-txt"></option>
+            <option name="contrib-destination">${drupal.rel.site.dir}</option>
+        </drush>
+    </target>
+
+    <!-- Run drush make on the project's make file -->
+    <target name="make-project" depends="init" description="Run drush make on the project make file">
+        <echo msg="Run drush make on the project make file" />
+        <echo msg="${project.basedir}/${project.make}" />
+        <if>
+            <available file="${project.basedir}/${project.make}" />
+            <then>
+                <drush command="make" assume="yes" bin="${drush.bin}" pipe="yes" verbose="${drush.verbose}" root="${build.dir}">
+                    <param>${project.make}</param>
+                    <param>${build.dir}</param>
+                    <option name="concurrency">10</option>
+                    <option name="no-patch-txt"></option>
+                    <option name="no-core"></option>
+                    <option name="working-copy"></option>
+                    <option name="contrib-destination">${drupal.rel.site.dir}</option>
+                </drush>
+            </then>
+            <else>
+                <echo msg="Cannot find a make file for this project. Skipping make." />
+            </else>
+        </if>
+    </target>
+
+    <!-- Symlink all multisite profiles -->
+    <target name="symlink-profiles" depends="init" description="Symlink all multisite profiles">
+        <echo msg="Symlink multisite profiles" />
+        <foreach list="${multisite.profiles}" param="profile" target="symlink-profile" delimiter="," />
+    </target>
+
+    <!-- Symlink one multisite profile -->
+    <target name="symlink-profile" depends="init">
+        <echo msg="Symlink multisite profile ${profile}" />
+        <symlink link="${drupal.profile.dir}/${profile}" target="../../${multisite.dir}/profiles/${profile}" overwrite="true"/>
+    </target>
+
+    <!-- Symlink custom modules -->
+    <target name="symlink-modules" depends="init" description="Symlink custom modules">
+        <echo msg="Symlink custom modules" />
+        <!-- symlink project modules is there are any -->
+        <if>
+            <available file="${project.basedir}/modules" type="dir"/>
+            <then>
+                <symlink link="${drupal.modules.dir}/${project.shorthand}" target="${project.basedir}/modules"/>
+            </then>
+        </if>
+        <!-- symlink modules in all folder -->
+        <symlink link="${drupal.modules.dir}/custom2" target="${project.basedir}/sites/all/modules"/>
+        <!-- symlink multisite modules -->
+        <symlink link="${drupal.modules.dir}/multisite" target="${project.basedir}/${multisite.dir}/sites/all/modules" overwrite="true"/>
+    </target>
+
+    <!-- Symlink custom themes -->
+    <target name="symlink-themes" depends="init" description="Symlink custom themes">
+        <echo msg="Symlink custom themes"></echo>
+        <!-- symlink project themes is there are any -->
+        <if>
+            <available file="${project.basedir}/themes" type="dir"/>
+            <then>
+                <symlink link="${drupal.themes.dir}/${project.shorthand}" target="${project.basedir}/themes"/>
+            </then>
+        </if>
+        <!-- symlink multisite themes -->
+        <symlink link="${drupal.themes.dir}/multisite" target="${project.basedir}/${multisite.dir}/sites/all/themes" overwrite="true"/>
+    </target>
+
+    <!-- Symlink libraries -->
+    <target name="symlink-libraries" depends="init" description="Symlink custom libraries">
+        <if>
+            <not><available file="${drupal.libraries.dir}" type="dir" /></not>
+            <then>
+            <mkdir dir="${drupal.libraries.dir}"/>
+            </then>
+        </if>
+        <!-- symlink multisite libraries -->
+        <symlink link="${drupal.libraries.dir}/multiste" target="${project.basedir}/${multisite.dir}/sites/all/libraries" overwrite="true"/>
+    </target>
+
+    <!-- Runs all the symlink targets -->
+    <target name="symlink-all" depends="symlink-profiles, symlink-libraries, symlink-modules, symlink-themes" description="Runs all the link targets">
+        <phingcall target="symlink-profiles"/>
+        <phingcall target="symlink-libraries"/>
+        <phingcall target="symlink-modules"/>
+        <phingcall target="symlink-themes"/>
+    </target>
+
+    <!-- Create files folder -->
+    <target name="create-files-folder" depends="init" description="Create files folder">
+        <echo msg="Create files folder" />
+        <if>
+            <not><available file="${drupal.files.dir}" type="dir" /></not>
+            <then>
+            <mkdir dir="${drupal.files.dir}"/>
+            <chmod file="${drupal.files.dir}" mode="0775" failonerror="true"/>
+            </then>
+        </if>
+    </target>
+
+    <!-- Manipulate settings.php file.
+    @todo need this? -->
+    <target name="create-settings.php" depends="init">
+        <echo msg="Copying default.settings.php file to settings.php..."/>
+        <copy file="${drupal.settings.dir}/default.settings.php" tofile="${drupal.settings.dir}/settings.php"/>
+        <chmod file="${drupal.settings.dir}/settings.php" mode="0775" failonerror="true"/>
+    </target>
+
+    <!-- Install drupal. -->
+    <target name="install-drupal" description="Run the install." depends="init">
+        <drush command="site-install" assume="yes" root="${project.root}/${build.dir}" bin="${drush.bin}" verbose="${drush.verbose}">
+            <option name="db-url" value="${drupal.db.url}"/>
+            <option name="site-name" value="${project.name}"/>
+            <option name="account-name" value="${drupal.admin.username}"/>
+            <option name="account-pass" value="${drupal.admin.password}"/>
+            <option name="account-mail" value="${drupal.admin.email}"/>
+            <param>${drupal.profile}</param>
+        </drush>
+    </target>
+
+    <!-- Import production database. -->
+    <target name="import-prod-db" description="Import production database." depends="init">
+        <echo msg="Import production database." />
+        <exec command="wget ${project.database.url}${project.database.filename}" dir="." checkreturn="false" passthru="false" logoutput="true"
+        />
+        <exec command="yes | mysqladmin -u ${drupal.db.user} -p${drupal.db.password} drop '${drupal.db.name}'" logoutput="true" />
+        <exec command="echo 'create database ${drupal.db.name};' | mysql -u ${drupal.db.user} -p${drupal.db.password}" logoutput="true" />
+        <exec command="gunzip &lt; ${project.database.filename} | mysql -u ${drupal.db.user} -p${drupal.db.password} ${drupal.db.name}" checkreturn="false" passthru="false" logoutput="true" />
+        <drush command="registry-rebuild" assume="yes" root="${project.root}/${build.dir}" bin="${drush.bin}">
+            <param>--fire-bazooka</param>
+        </drush>
+            <drush command="updatedb" assume="yes" root="${project.root}/${build.dir}" bin="${drush.bin}">
+        </drush>
+    </target>
+
+    <!-- Link test files into the build root. -->
+    <target name="setup-behat" depends="init">
+        <if>
+            <not>
+                <available file="${project.basedir}/behat.yml" type="file" property="behat.setup" />
+            </not>
+            <then>
+                <echo message="Creating behat.yml config file" />
+                <loadfile property="behat.yml" file="${project.basedir}/behat.template.yml">
+                    <filterchain>
+                        <replacetokens>
+                            <token key="project.code.dir" value="${project.code.dir}" />
+                            <token key="drupal.site.dir" value="${drupal.site.dir}" />
+                            <token key="behat.base_url" value="${behat.base_url}" />
+                        </replacetokens>
+                    </filterchain>
+                </loadfile>
+                <exec command="${behat.bin} --init" />
+                <echo message="${behat.yml}" file="${project.basedir}/behat.yml" />
+            </then>
+        </if>
+    </target>
+
+    <!-- Run behat tests. -->
+    <target name="run-behat" description="Run behat tests." depends="setup-behat, init">
+        <exec command="${behat.bin}"
+              logoutput="true"
+              checkreturn="true"
+              passthru="true"/>
+    </target>
+
+    <!-- Checks the sites modules with CodeSniffer and generates checkstyle.xml -->
+    <target name="sniff-code" description="Checks the sites modules with CodeSniffer and generates checkstyle.xml" depends="init">
+        <echo msg="Checks the sites modules with CodeSniffer and generates checkstyle.xml" />
+        <exec command="${phpcs.bin} --config-set installed_paths ${project.root}/vendor/drupal/coder/coder_sniffer" />
+        <exec command="${phpcs.bin} --standard=Drupal --report=checkstyle --report-file=${project.log.dir}/checkstyle-codesniffer.xml --extensions='php,module,inc,install,test,profile,theme,js,css,info,txt'
+                    --ignore=*/contrib/*,*/*.features.*,*/*.field_group.inc,*/*.layout.*,*/*.pages_default.*,*/*.panels_default.*,*/*strongarm.inc,*/*.views_default.inc
+                    sites/${project.shorthand} sites/all"
+              logoutput="true" />
+    </target>
+
+    <!-- Enable modules. -->
+    <target name="enable-drupal-modules" description="Enable Drupal modules." depends="install-drupal">
+        <drush command="pm-enable" assume="yes" root="${build.dir}" bin="${drush.bin}">
+            <param>${drupal.modules}</param>
+            <param>--quiet</param>
+        </drush>
+    </target>
+
+    <!-- Make all the makes -->
+    <target name="make-all" description="Make all the makes" depends="init">
+        <phingcall target="make-multisite"/>
+        <phingcall target="make-project"/>
+    </target>
+
+    <!-- Does everything -->
+    <target name="build" description="Does everything." depends="init">
+        <echo msg="Does everything" />
+        <phingcall target="fetch-multisite"/>
+        <phingcall target="make-all"/>
+        <phingcall target="create-files-folder"/>
+        <phingcall target="symlink-all"/>
+        <phingcall target="install-drupal"/>
+    </target>
+
+    <!-- Fetches additional build script -->
+    <target name="fetch-more-build" description="Fetches additional build script">
+        <!-- Only clone if repository does not exist already -->
+        <echo msg="Fetches additional build script" />
+        <if>
+            <not><available file="${additional.build.script.dir}" /></not>
+            <then>
+                <exec command="git clone ${additional.build.script.dir.repo.url} ${additional.build.script.dir}" />
+            </then>
+        </if>
+    </target>
+
+    <!-- Reviews the code using coder -->
+    <target name="review-code" description="Reviews the code using coder">
+        <foreach target="review-code-type" param="coder.review.type" list="comment,i18n,security,sql,style" />
+    </target>
+
+    <!-- Reviews the code using one coder review type -->
+    <!-- @todo check what needs reviewed -->
+    <!-- @todo check drush fatal errors -->
+    <target name="review-code-type" description="Reviews the code using one coder review type" depends="init">
+        <drush command="coder-review" assume="yes" bin="${drush.bin}" pipe="yes" verbose="${drush.verbose}" uri="${drupal.uri}" returnProperty="xml" haltonerror="no">
+            <option name="${coder.review.type}" />
+            <param>sites/${project.shorthand}/modules</param>
+            <param>sites/${project.shorthand}/themes</param>
+        </drush>
+    </target>
+
+</project>
