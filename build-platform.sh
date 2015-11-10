@@ -7,5 +7,5 @@ echo "hello wurld"
 cp -R temp_docroot/* docroot
 rm -rf temp_docroot
 ./bin/phing -verbose symlink-all
-./bin/phing -verbose copy-platform-settings
+#./bin/phing -verbose copy-platform-settings
 #./bin/phing install-drupal
