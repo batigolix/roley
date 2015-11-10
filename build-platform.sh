@@ -9,5 +9,5 @@ ls
 ./bin/phing -verbose make-multisite
 ./bin/phing -verbose make-project
 ./bin/phing -verbose symlink-all
-./bin/phing -verbose copy
+./bin/phing -verbose copy-platform-settings
 #./bin/phing install-drupal
